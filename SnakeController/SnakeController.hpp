@@ -38,6 +38,7 @@ private:
     IPort& m_foodPort;
     IPort& m_scorePort;
 
+    World wordl;
     std::pair<int, int> m_mapDimension;
     std::pair<int, int> m_foodPosition;
 
@@ -57,6 +58,7 @@ private:
     void handlePauseInd(std::unique_ptr<Event>);
 
     bool isSegmentAtPosition(int x, int y) const;
+    bool isFoodPositionValid();
     Segment calculateNewHead() const;
     void updateSegmentsIfSuccessfullMove(Segment const& newHead);
     void addHeadSegment(Segment const& newHead);
