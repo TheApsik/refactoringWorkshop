@@ -17,7 +17,8 @@ UnexpectedEventException::UnexpectedEventException()
 {}
 
 Controller::Controller(IPort& p_displayPort, IPort& p_foodPort, IPort& p_scorePort, std::string const& p_config)
-    : m_displayPort(p_displayPort),
+    : isPause(false),
+      m_displayPort(p_displayPort),
       m_foodPort(p_foodPort),
       m_scorePort(p_scorePort)
 {
@@ -150,6 +151,11 @@ void Controller::handleNewFood(const FoodResp& requestedFood)
     m_foodPosition = std::make_pair(requestedFood.x, requestedFood.y);
 }
 
+void Controller::handlePause(const PauseInd & pauseInd)
+{
+    isPause = !isPause;
+}
+
 bool Controller::doesCollideWithSnake(const Controller::Segment &newSegment) const
 {
     for (auto segment : m_segments) {
@@ -215,14 +221,23 @@ Controller::Segment Controller::getNewHead() const
 
 void Controller::receive(std::unique_ptr<Event> e)
 {
-    switch(e->getMessageId())
-    {
-        case TimeoutInd::MESSAGE_ID: return handleTimePassed(*static_cast<EventT<TimeoutInd> const&>(*e));
-        case DirectionInd::MESSAGE_ID: return handleDirectionChange(*static_cast<EventT<DirectionInd> const&>(*e));
-        case FoodInd::MESSAGE_ID: return handleFoodPositionChange(*static_cast<EventT<FoodInd> const&>(*e));
-        case FoodResp::MESSAGE_ID: return handleNewFood(*static_cast<EventT<FoodResp> const&>(*e));
-        default: throw UnexpectedEventException();
-    };
+    if(isPause){
+        switch(e->getMessageId()){
+            case PauseInd::MESSAGE_ID: return handlePause(*static_cast<EventT<PauseInd> const&>(*e));
+            case FoodInd::MESSAGE_ID: return handleFoodPositionChange(*static_cast<EventT<FoodInd> const&>(*e));
+            case FoodResp::MESSAGE_ID: return handleNewFood(*static_cast<EventT<FoodResp> const&>(*e));
+        }
+    }else{
+        switch(e->getMessageId())
+        {
+            case TimeoutInd::MESSAGE_ID: return handleTimePassed(*static_cast<EventT<TimeoutInd> const&>(*e));
+            case DirectionInd::MESSAGE_ID: return handleDirectionChange(*static_cast<EventT<DirectionInd> const&>(*e));
+            case PauseInd::MESSAGE_ID: return handlePause(*static_cast<EventT<PauseInd> const&>(*e));
+            case FoodInd::MESSAGE_ID: return handleFoodPositionChange(*static_cast<EventT<FoodInd> const&>(*e));
+            case FoodResp::MESSAGE_ID: return handleNewFood(*static_cast<EventT<FoodResp> const&>(*e));
+            default: throw UnexpectedEventException();
+        };
+    }
 }
 
 } // namespace Snake
